@@ -39,6 +39,7 @@
     Digispot-BackupDJin.ps1
 
 v1.00 2022-12-23 initial version
+v1.01 2023-06-15 small fixes
 #>
 # Handling command-line parameters
 param (
@@ -47,25 +48,32 @@ param (
 $encoding = [Console]::OutputEncoding
 #[Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding("UTF8")
 #[Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding("oem")
-if ($PSVersionTable.PSVersion.Major -lt 5) {
-    Write-Host "`n`nThis script works with PowerShell 5.0 or newer.`nPlease upgrade!`n"
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Host "`n`nThis script works with PowerShell Core 7.0 or newer.`nPlease upgrade!`n"
     Break
 }
 
+###############################################################
+#
+# Configuration >>
+$dstPath = "\\EMG-STORAGE\Tech\-djin backups-"
+$include = @('KeyDll*.dll', '*.info', '*.ini')
+$exclude = @('*.tmp','*.log')
+$backupsAge = -90    # delete backups older than 90 days
+$fileversion = "v1.01 2023-06-15"
+#
+#
+###############################################################
+
+Write-Host "`nDigispot-BackupDJin.ps1   " $fileversion
+Write-Host "Backup DJin folders`n"
 if (!($cfg)) { $cfg = "Digispot-BackupDJin.csv" }
 
-Write-Host "`nDigispot-BackupDJin.ps1   v1.00 2022-12-23"
-Write-Host "Backup DJin folders`n"
-
-###############################################################
-#
-# Set destination here >>
-$dstPath = "\\EMG-STORAGE\Tech\-djin backups-"
-#
-###############################################################
 # Setup log files
 [string]$currentdir = Get-Location
-$PSscript = Get-Item $MyInvocation.InvocationName
+$PSscript = Get-Item $MyInvocation.MyCommand.Name
+
+
 if (!(Test-Path $currentdir"\log")) {
     New-Item -Path $currentdir"\log" -Force -ItemType Directory | Out-Null
 }
@@ -93,10 +101,6 @@ if (!(Test-Path $dstPath)) {
     Write-Log -message "[-] Destination path $dstPath is not available"
     break
 }
-
-$include = @('KeyDll*.dll', '*.info', '*.ini')
-$exclude = @('*.tmp','*.log')
-$backupsAge = -90    # delete backups older than 90 days
 
 # Import CSV to array
 $array = Import-Csv -Path $cfg -Delimiter ";" -Header "UNC", "hostname", "path"
